@@ -1,0 +1,55 @@
+var load = (function() {
+
+  function _load(tag) {
+    return function(url) {
+      // Cette promesse sera utiliserée par Promise.all pour determiner si yep ou nope
+      return new Promise(function(resolve, reject) {
+        var element = document.createElement(tag);
+        var parent = 'body';
+        var attr = 'src';
+
+        // Important - yop ou nope pour la promesse
+        element.onload = function() {
+          resolve(url);
+        };
+        element.onerror = function() {
+          reject(url);
+        };
+
+        // Besoin de circonstancier les attributs selon le type
+        switch(tag) {
+          case 'script':
+            element.async = true;
+            break;
+          case 'link':
+            element.type = 'text/css';
+            element.rel = 'stylesheet';
+            attr = 'href';
+            parent = 'head';
+        }
+
+        // Dans le document pour stopper le chargement
+        element[attr] = url;
+        document[parent].appendChild(element);
+      });
+    };
+  }
+  
+  return {
+    css: _load('link'),
+    js: _load('script'),
+    img: _load('img')
+  }
+})();
+
+// Usage:  Charge différents fichiers en un appel
+Promise.all([
+    load.js('lib/highlighter.js'), 
+    load.js('lib/main.js'), 
+    load.css('lib/highlighter.css'),
+    load.img('images/logo.png')
+  ]).then(function() {
+    console.log('Ok, tout est chargé !');
+  }).catch(function() {
+    console.log('Arf, fail...');
+  });
